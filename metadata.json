@@ -1,0 +1,6 @@
+{
+  "name": "The Anand Medical College Murder",
+  "description": "A 20-player social deduction murder mystery game with real-time host and player synchronization, forensic dossiers, evidence envelopes, and case deduction.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

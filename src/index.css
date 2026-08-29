@@ -1,0 +1,216 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-paper: #F7F4EF;
+    --ink-black: #1C1B19;
+    --ink-faded: #4A4844;
+    --crimson: #8B1A1A;
+    --crimson-stamp: #A82020;
+    --ledger-blue: #2E4A6B;
+    --ledger-line: #D1D8E0;
+    --manila-bg: #E8D5A3;
+    --tier1-paper: #FFFFFF;
+    --tier2-paper: #E8D5A3;
+    --tier3-paper: #C4453D;
+    --host-bg: #0D0C0B;
+    --host-card: #171614;
+    --host-text: #F7F4EF;
+  }
+
+  body {
+    background-color: #0D0C0B;
+    color: #1C1B19;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Headings: Newsreader / Editorial Serif */
+  h1, h2, h3, h4, .font-serif, .font-heading {
+    font-family: 'Newsreader', 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+
+  /* Document numbers, codes, stamps, register entries: Courier Prime */
+  code, pre, .font-mono, .font-typewriter {
+    font-family: 'Courier Prime', 'JetBrains Mono', monospace;
+  }
+
+  /* UI Chrome & Buttons: Inter */
+  .font-sans {
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* =========================================================================
+   GOVERNMENT ARCHIVE & RECORDS PATTERNS (Colorblind-Safe Board States)
+   ========================================================================= */
+
+/* 1. LOCKED: High-contrast diagonal hash pattern */
+.pattern-locked {
+  background-color: #1E1C1A;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.05) 10px,
+    rgba(255, 255, 255, 0.05) 20px
+  );
+  border: 2px dashed rgba(255, 255, 255, 0.25);
+}
+.pattern-locked-light {
+  background-color: #ECE7DF;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 8px,
+    rgba(46, 74, 107, 0.08) 8px,
+    rgba(46, 74, 107, 0.08) 16px
+  );
+  border: 2px dashed #B8B0A2;
+}
+
+/* 2. SEALED: Dotted / stippled manila pattern with wax seal indicator */
+.pattern-sealed {
+  background-color: #24201A;
+  background-image: radial-gradient(rgba(232, 213, 163, 0.25) 1.5px, transparent 1.5px);
+  background-size: 12px 12px;
+  border: 2px solid #A88F54;
+}
+.pattern-sealed-light {
+  background-color: #F3EBD8;
+  background-image: radial-gradient(rgba(46, 74, 107, 0.18) 1.5px, transparent 1.5px);
+  background-size: 12px 12px;
+  border: 2px solid #C4B283;
+}
+
+/* 3. PUBLISHED: Clean solid archival paper with crisp borders & stamp */
+.pattern-published {
+  background-color: #F7F4EF;
+  color: #1C1B19;
+  border: 2px solid #8B1A1A;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.pattern-published-dark {
+  background-color: #1D232C;
+  color: #F7F4EF;
+  border: 2px solid #2E4A6B;
+}
+
+/* 4. SEALED BY REFUSAL: Dense crosshatch / barred cross pattern */
+.pattern-refused {
+  background-color: #1F1515;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 6px,
+    rgba(196, 69, 61, 0.25) 6px,
+    rgba(196, 69, 61, 0.25) 12px
+  );
+  border: 3px double #C4453D;
+}
+.pattern-refused-light {
+  background-color: #F7ECEB;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 6px,
+    rgba(139, 26, 26, 0.15) 6px,
+    rgba(139, 26, 26, 0.15) 12px
+  );
+  border: 3px double #8B1A1A;
+}
+
+/* =========================================================================
+   PHYSICAL PAPER TIER CLUE STYLES
+   ========================================================================= */
+
+/* Tier I: Crisp White Paper */
+.paper-tier-1 {
+  background-color: #FFFFFF;
+  color: #1C1B19;
+  border: 1px solid #D5CFBE;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Tier II: Manila Amber Paper */
+.paper-tier-2 {
+  background-color: #E8D5A3;
+  color: #262116;
+  border: 1px solid #C4B07B;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Tier III: Dossier Red Paper */
+.paper-tier-3 {
+  background-color: #C4453D;
+  color: #FDFBF7;
+  border: 1px solid #8B1A1A;
+  box-shadow: 0 2px 8px rgba(139, 26, 26, 0.25);
+}
+
+/* =========================================================================
+   OFFICIAL RUBBER STAMPS & LEDGER FURNITURE
+   ========================================================================= */
+
+.rubber-stamp-red {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  text-transform: uppercase;
+  font-family: 'Courier Prime', monospace;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: #8B1A1A;
+  border: 2px solid #8B1A1A;
+  border-radius: 3px;
+  transform: rotate(-2deg);
+  box-shadow: inset 0 0 0 1px rgba(139, 26, 26, 0.2);
+}
+
+.rubber-stamp-blue {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  text-transform: uppercase;
+  font-family: 'Courier Prime', monospace;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: #2E4A6B;
+  border: 2px solid #2E4A6B;
+  border-radius: 3px;
+  transform: rotate(1deg);
+  box-shadow: inset 0 0 0 1px rgba(46, 74, 107, 0.2);
+}
+
+/* Ledger paper line background */
+.ledger-ruled {
+  background-color: #F7F4EF;
+  background-image: linear-gradient(#E8E3D8 1px, transparent 1px);
+  background-size: 100% 28px;
+}
+
+/* Carbon copy paper effect */
+.carbon-paper {
+  background-color: #F5F1E8;
+  border-left: 4px solid #2E4A6B;
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #C4BCAE;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8B1A1A;
+}

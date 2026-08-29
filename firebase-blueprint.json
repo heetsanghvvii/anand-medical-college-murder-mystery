@@ -1,0 +1,153 @@
+{
+  "entities": {
+    "Room": {
+      "title": "Room",
+      "description": "Game room state and settings",
+      "type": "object",
+      "properties": {
+        "roomCode": { "type": "string" },
+        "phase": { "type": "string" },
+        "phaseStartedAt": { "type": "number" },
+        "playerCount": { "type": "number" },
+        "maxPlayerCapacity": { "type": "number" },
+        "hostUid": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "secondAttackTriggered": { "type": "boolean" },
+        "safariSuitRevealed": { "type": "boolean" },
+        "huntVialFoundBy": { "type": "string" },
+        "huntFileFoundBy": { "type": "string" }
+      },
+      "required": ["roomCode", "phase", "hostUid", "createdAt"]
+    },
+    "Player": {
+      "title": "Player",
+      "description": "Player in the room with assigned character",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "characterId": { "type": "number" },
+        "characterName": { "type": "string" },
+        "isHost": { "type": "boolean" },
+        "isReady": { "type": "boolean" },
+        "joinedAt": { "type": "number" },
+        "online": { "type": "boolean" }
+      },
+      "required": ["uid", "name", "isHost"]
+    },
+    "EnvelopeState": {
+      "title": "EnvelopeState",
+      "description": "State of clue envelopes A through J",
+      "type": "object",
+      "properties": {
+        "letter": { "type": "string" },
+        "unlocked": { "type": "boolean" },
+        "unlocked_at": { "type": "number" },
+        "unlocked_by": { "type": "array" },
+        "published": { "type": "boolean" },
+        "published_by": { "type": "string" },
+        "published_at": { "type": "number" },
+        "partner1_submitted": { "type": "boolean" },
+        "partner2_submitted": { "type": "boolean" }
+      },
+      "required": ["letter", "unlocked", "published"]
+    },
+    "NairMessage": {
+      "title": "NairMessage",
+      "description": "Forensic wire communications and 5-word messages",
+      "type": "object",
+      "properties": {
+        "msgId": { "type": "string" },
+        "senderUid": { "type": "string" },
+        "senderName": { "type": "string" },
+        "characterName": { "type": "string" },
+        "text": { "type": "string" },
+        "phase": { "type": "string" },
+        "created_at": { "type": "number" },
+        "type": { "type": "string" }
+      },
+      "required": ["msgId", "senderUid", "text", "created_at"]
+    },
+    "Vote": {
+      "title": "Vote",
+      "description": "Final suspect ballot cast by player",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "playerName": { "type": "string" },
+        "accusedCharacterId": { "type": "number" },
+        "accusedCharacterName": { "type": "string" },
+        "submitted_at": { "type": "number" }
+      },
+      "required": ["uid", "accusedCharacterId", "submitted_at"]
+    },
+    "Deduction": {
+      "title": "Deduction",
+      "description": "5-question deduction questionnaire response",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "playerName": { "type": "string" },
+        "characterName": { "type": "string" },
+        "q1_murderer": { "type": "string" },
+        "q2_poison": { "type": "string" },
+        "q3_motive": { "type": "string" },
+        "q4_second_attack": { "type": "string" },
+        "q5_complicit": { "type": "string" },
+        "score": { "type": "number" },
+        "submitted_at": { "type": "number" }
+      },
+      "required": ["uid", "submitted_at"]
+    },
+    "Compel": {
+      "title": "Compel",
+      "description": "Sworn truth compel challenge",
+      "type": "object",
+      "properties": {
+        "compelId": { "type": "string" },
+        "sourceUid": { "type": "string" },
+        "sourcePlayerName": { "type": "string" },
+        "sourceCharacterName": { "type": "string" },
+        "targetUid": { "type": "string" },
+        "targetPlayerName": { "type": "string" },
+        "targetCharacterName": { "type": "string" },
+        "question": { "type": "string" },
+        "response": { "type": "string" },
+        "status": { "type": "string" },
+        "used_at": { "type": "number" },
+        "answered_at": { "type": "number" }
+      },
+      "required": ["compelId", "sourceUid", "targetUid", "question", "status", "used_at"]
+    }
+  },
+  "firestore": {
+    "/rooms/{roomCode}": {
+      "schema": { "$ref": "#/entities/Room" },
+      "description": "Game rooms collection"
+    },
+    "/rooms/{roomCode}/players/{uid}": {
+      "schema": { "$ref": "#/entities/Player" },
+      "description": "Players in room"
+    },
+    "/rooms/{roomCode}/envelopeStates/{letter}": {
+      "schema": { "$ref": "#/entities/EnvelopeState" },
+      "description": "Envelope unlocking states"
+    },
+    "/rooms/{roomCode}/nairMessages/{msgId}": {
+      "schema": { "$ref": "#/entities/NairMessage" },
+      "description": "Nair wire transmissions"
+    },
+    "/rooms/{roomCode}/votes/{uid}": {
+      "schema": { "$ref": "#/entities/Vote" },
+      "description": "Player final votes"
+    },
+    "/rooms/{roomCode}/deductions/{uid}": {
+      "schema": { "$ref": "#/entities/Deduction" },
+      "description": "Player deduction questionnaires"
+    },
+    "/rooms/{roomCode}/compels/{compelId}": {
+      "schema": { "$ref": "#/entities/Compel" },
+      "description": "Compel challenges"
+    }
+  }
+}
