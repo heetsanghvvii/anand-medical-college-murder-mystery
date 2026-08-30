@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ensureAnonymousAuth, getLocalUid } from './lib/firebase';
+import { ensureAnonymousAuth } from './lib/firebase';
 import {
   listenToRoom,
   listenToPlayers,
@@ -69,8 +69,7 @@ export default function App() {
         const user = await ensureAnonymousAuth();
         setCurrentUser(user);
       } catch (err) {
-        console.warn('Using local client identity:', err);
-        setCurrentUser({ uid: getLocalUid() });
+        console.error('Firebase authentication failed:', err);
       } finally {
         setAuthLoading(false);
       }

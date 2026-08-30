@@ -23,28 +23,16 @@ export const db = firebaseConfigJson.firestoreDatabaseId && firebaseConfigJson.f
 // Initialize Firebase Auth
 export const auth = getAuth(app);
 
-// Persistent local fallback UID if anonymous auth is restricted in Firebase console
-export function getLocalUid(): string {
-  const STORAGE_KEY = 'amcm_device_player_uid_v1';
-  let uid = localStorage.getItem(STORAGE_KEY);
-  if (!uid) {
-    uid = 'player_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
-    localStorage.setItem(STORAGE_KEY, uid);
-  }
-  return uid;
-}
+// Ensure stable anonymous authentication
+let authPromise: Promise<User> | null = null;
 
-// Ensure stable authentication without throwing admin-restricted-operation errors
-let authPromise: Promise<User | { uid: string; isAnonymous: boolean }> | null = null;
-
-export async function ensureAnonymousAuth(): Promise<User | { uid: string; isAnonymous: boolean }> {
+export async function ensureAnonymousAuth(): Promise<User> {
   if (auth.currentUser) {
     return auth.currentUser;
   }
 
   if (!authPromise) {
-    authPromise = new Promise((resolve) => {
-      // Check current auth state first
+    authPromise = new Promise<User>((resolve, reject) => {
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
           unsubscribe();
@@ -55,13 +43,9 @@ export async function ensureAnonymousAuth(): Promise<User | { uid: string; isAno
             unsubscribe();
             resolve(credential.user);
           } catch (err: unknown) {
-            // When anonymous authentication is restricted in Firebase Console,
-            // fallback gracefully to a persistent local guest device UID
             unsubscribe();
-            resolve({
-              uid: getLocalUid(),
-              isAnonymous: true,
-            });
+            console.error('Failed to sign in anonymously with Firebase Auth:', err);
+            reject(err);
           }
         }
       });
@@ -69,4 +53,16 @@ export async function ensureAnonymousAuth(): Promise<User | { uid: string; isAno
   }
 
   return authPromise;
+}
+
+export async function getCurrentUserToken(): Promise<string | null> {
+  try {
+    const user = auth.currentUser || (await ensureAnonymousAuth());
+    if (user && typeof user.getIdToken === 'function') {
+      return await user.getIdToken();
+    }
+  } catch (err) {
+    console.error('Error fetching Firebase ID token:', err);
+  }
+  return null;
 }

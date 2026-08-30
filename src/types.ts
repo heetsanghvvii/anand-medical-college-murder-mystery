@@ -26,6 +26,21 @@ export interface RoomData {
   huntFileFoundBy?: string | null;
   customTimerSeconds?: number;
   timerPaused?: boolean;
+  tier3RevealedIndex?: number; // 0 to 10 in R5_HUNT
+  revealStepIndex?: number; // -1 to 7 during REVEAL
+  lastSealedBanner?: {
+    letter: string;
+    tier: 'I' | 'II';
+    members: string[];
+    isRefusal?: boolean;
+    timestamp: number;
+  } | null;
+  lastPublishedBanner?: {
+    letter: string;
+    tier: 'I' | 'II' | 'III';
+    summary: string;
+    timestamp: number;
+  } | null;
 }
 
 export interface CharacterData {
@@ -33,14 +48,14 @@ export interface CharacterData {
   name: string;
   title: string;
   public_bio: string;
-  secret: string;
-  goal: string;
-  known_fact: string;
+  secret?: string;
+  goal?: string;
+  known_fact?: string;
   fragment_riddle: string;
   code_half: string;
   speaks_first: boolean;
   envelope_letter: string;
-  is_murderer: boolean;
+  is_murderer?: boolean;
   intro_en?: string;
   intro_gu?: string;
   generation?: 'senior' | 'junior';
@@ -53,16 +68,33 @@ export interface CharacterData {
   has_second_attack?: boolean;
 }
 
+export interface SlipData {
+  tier: 'I' | 'II' | 'III';
+  round: number;
+  sealable: boolean;
+  paper: 'white' | 'pale yellow' | 'red';
+  title: string;
+  text: string;
+  board_summary: string;
+  eliminates: number[];
+  narrows_to?: number[] | null;
+  why: string;
+  read_by?: string;
+}
+
 export interface EnvelopeData {
   letter: string; // 'A' through 'J'
+  members?: [number, number];
+  code?: string;
   title: string;
-  body: string;
+  body?: string;
   char_id_1: number;
   char_id_2: number;
-  full_code: string;
+  full_code?: string;
   summary: string;
-  eliminates: number[]; // character ids this slip rules out
-  reason: string; // one-line reason string
+  slips?: SlipData[];
+  eliminates?: number[]; // character ids this slip rules out
+  reason?: string; // one-line reason string
 }
 
 export interface PlayerData {
@@ -91,6 +123,19 @@ export interface EnvelopeStateData {
   published_at: number | null;
   partner1_submitted?: boolean;
   partner2_submitted?: boolean;
+  // Multi-tier & Sealing States
+  tier1_state?: 'LOCKED' | 'PUBLISHED' | 'SEALED' | 'SEALED_REFUSAL' | 'FORCED_OPEN';
+  tier2_state?: 'LOCKED' | 'PUBLISHED' | 'SEALED' | 'SEALED_REFUSAL' | 'FORCED_OPEN';
+  tier3_state?: 'LOCKED' | 'PUBLISHED';
+  tier1_published?: boolean;
+  tier2_published?: boolean;
+  tier3_published?: boolean;
+  tier1_sealed?: boolean;
+  tier2_sealed?: boolean;
+  tier1_refusal?: boolean;
+  tier2_refusal?: boolean;
+  tier1_forced_open?: boolean;
+  tier2_forced_open?: boolean;
 }
 
 export interface CompelUseData {

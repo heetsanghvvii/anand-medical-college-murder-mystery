@@ -12,7 +12,6 @@ import {
   CHARACTERS,
   ENVELOPES,
   PHASE_CONFIG,
-  SOLUTION_CARD,
   DROP_ORDER_CHARACTER_IDS,
 } from '../data/game';
 import {
@@ -23,6 +22,7 @@ import {
   sendNairFiveWords,
   recordHuntFind,
 } from '../lib/firestoreService';
+import { fetchCharacterSecret, CharacterSecretResponse } from '../lib/apiService';
 import { sound } from '../lib/audio';
 import { CompelResponderModal, CompelInitiatorModal } from './CompelModal';
 import { SecondAttackModal } from './SecondAttackModal';
@@ -127,6 +127,32 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({
   // Vote Form State
   const [selectedAccusedId, setSelectedAccusedId] = useState<number | null>(null);
   const [voteSubmitted, setVoteSubmitted] = useState<boolean>(false);
+
+  // Server-gated character secrets (secret, known_fact, is_murderer)
+  const [characterSecrets, setCharacterSecrets] = useState<CharacterSecretResponse | null>(null);
+  const [secretsLoading, setSecretsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (player?.characterId && room?.roomCode) {
+      setSecretsLoading(true);
+      fetchCharacterSecret(room.roomCode, player.characterId)
+        .then((data) => {
+          if (isMounted) {
+            setCharacterSecrets(data);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load private dossier:', err);
+        })
+        .finally(() => {
+          if (isMounted) setSecretsLoading(false);
+        });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [player?.characterId, room?.roomCode]);
 
   // Strictly bind character to assigned character only
   const character = CHARACTERS.find((c) => c.id === player.characterId) || CHARACTERS[0];
@@ -296,7 +322,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({
                 <span className="font-serif font-bold text-base text-white tracking-wide truncate max-w-[180px]">
                   {character.name}
                 </span>
-                {character.is_murderer && (
+                {characterSecrets?.is_murderer && (
                   <span className="px-1.5 py-0.5 bg-[#8B1A1A] text-white text-[9px] font-mono font-bold rounded">
                     CULPRIT
                   </span>
@@ -453,7 +479,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({
           </div>
 
           {/* Murderer Warning */}
-          {character.is_murderer && (
+          {characterSecrets?.is_murderer && (
             <div className="p-4 bg-[#FBF0EE] border-2 border-[#8B1A1A] rounded-xl space-y-1">
               <div className="text-sm font-serif font-bold text-[#8B1A1A] uppercase flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4" />
@@ -491,7 +517,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({
           </div>
 
           <p className="text-xs font-sans text-[#1C1B19] leading-relaxed bg-white p-3.5 rounded-xl border border-[#E8C5C3] whitespace-pre-wrap">
-            {character.secret}
+            {characterSecrets?.secret || (secretsLoading ? 'Decrypting classified dossier from police database...' : 'Confidential file locked.')}
           </p>
 
           <p className="text-[10px] font-mono text-[#8B1A1A] italic">
@@ -514,7 +540,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({
           </div>
 
           <p className="text-xs font-sans text-[#124232] leading-relaxed bg-white p-3.5 rounded-xl border border-[#BCE0D1]">
-            {character.known_fact}
+            {characterSecrets?.known_fact || (secretsLoading ? 'Verifying eyewitness statement...' : 'Eyewitness statement locked.')}
           </p>
 
           <p className="text-[10px] font-mono text-[#1B634B] italic">
@@ -623,16 +649,65 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({
               </div>
 
               <div>
-                <h4 className="text-base font-serif font-bold text-[#1C1B19]">
-                  {myEnvelopeData?.title}
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-base font-serif font-bold text-[#1C1B19]">
+                    {myEnvelopeData?.title}
+                  </h4>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 font-bold">
+                    3 ROUNDS OF SLIPS
+                  </span>
+                </div>
                 <p className="text-xs text-[#4A4844] mt-1 font-sans">
                   {myEnvelopeData?.summary}
                 </p>
               </div>
 
-              <div className="p-3.5 bg-white border border-emerald-200 rounded-xl text-xs font-mono text-[#1C1B19] whitespace-pre-wrap leading-relaxed">
-                {myEnvelopeData?.body}
+              {/* Multi-Tier Slips Presentation */}
+              <div className="space-y-3">
+                {myEnvelopeData?.slips?.map((slip, sIdx) => {
+                  const isTier1 = slip.tier === 'I';
+                  const isTier2 = slip.tier === 'II';
+                  const isTier3 = slip.tier === 'III';
+
+                  const slipBg = isTier1
+                    ? 'bg-white border-[#D5CFBE]'
+                    : isTier2
+                    ? 'bg-[#FEF9E7] border-[#F2D786]'
+                    : 'bg-[#FAF1F0] border-[#E8C5C3]';
+
+                  const badgeStyle = isTier1
+                    ? 'bg-zinc-200 text-zinc-800'
+                    : isTier2
+                    ? 'bg-amber-200 text-amber-900 font-bold'
+                    : 'bg-red-200 text-red-950 font-bold';
+
+                  return (
+                    <div key={sIdx} className={`p-4 rounded-xl border-2 space-y-2 shadow-sm ${slipBg}`}>
+                      <div className="flex items-center justify-between border-b border-black/10 pb-1.5">
+                        <span className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded ${badgeStyle}`}>
+                          TIER {slip.tier} • ROUND {slip.round} SLIP ({slip.paper.toUpperCase()} PAPER)
+                        </span>
+                        <span className="text-[10px] font-mono text-black/50 font-bold">
+                          Slip #{sIdx + 1}
+                        </span>
+                      </div>
+                      <h5 className="text-xs font-serif font-bold text-[#1C1B19]">
+                        {slip.title}
+                      </h5>
+                      <p className="text-xs font-mono text-[#1C1B19] whitespace-pre-wrap leading-relaxed bg-black/5 p-2.5 rounded-lg">
+                        {slip.text}
+                      </p>
+                      <div className="text-[10px] font-mono text-[#4A4844] flex items-center justify-between pt-1 border-t border-black/5">
+                        <span>Wire: <em>"{slip.board_summary}"</em></span>
+                        {slip.narrows_to && slip.narrows_to.length > 0 && (
+                          <span className="text-red-700 font-bold">
+                            Narrows: #{slip.narrows_to.join(', #')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Publish to Public TV Board */}
@@ -1087,6 +1162,8 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({
         isOpen={isMapOpen}
         onClose={() => setIsMapOpen(false)}
         currentPhase={currentPhase}
+        capacity={room.capacity || players.length}
+        players={players}
       />
     </div>
   );

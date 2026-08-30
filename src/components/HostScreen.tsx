@@ -14,8 +14,6 @@ import {
   CHARACTERS,
   ENVELOPES,
   PHASE_CONFIG,
-  CLUE_CARDS,
-  SOLUTION_CARD,
   DROP_ORDER_CHARACTER_IDS,
 } from '../data/game';
 import {
@@ -36,6 +34,7 @@ import {
   autoAssignRemainingCharacters,
   togglePlayerLock,
 } from '../lib/firestoreService';
+import { fetchClueCard, fetchGameSolution } from '../lib/apiService';
 import { sound } from '../lib/audio';
 import { ClueCardModal } from './ClueCardModal';
 import { EnvelopeModal } from './EnvelopeModal';
@@ -115,11 +114,37 @@ export const HostScreen: React.FC<HostScreenProps> = ({
   const [isAutoAssigning, setIsAutoAssigning] = useState<boolean>(false);
   const [autoAssignFeedback, setAutoAssignFeedback] = useState<string | null>(null);
   const [playerSearchQuery, setPlayerSearchQuery] = useState<string>('');
+  const [activeClueCard, setActiveClueCard] = useState<ClueCard | null>(null);
+  const [solutionData, setSolutionData] = useState<any | null>(null);
 
   const currentPhase = room.phase || 'LOBBY';
   const phaseInfo = PHASE_CONFIG[currentPhase] || PHASE_CONFIG.LOBBY;
   const capacity = room.maxPlayerCapacity || 20;
   const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+
+  useEffect(() => {
+    let isMounted = true;
+    if (room?.roomCode && currentPhase) {
+      fetchClueCard(room.roomCode, currentPhase).then((card) => {
+        if (isMounted) setActiveClueCard(card);
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [room?.roomCode, currentPhase]);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (room?.roomCode && (currentPhase === 'REVEAL' || room.hostUid === hostUid)) {
+      fetchGameSolution(room.roomCode).then((sol) => {
+        if (isMounted) setSolutionData(sol);
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [room?.roomCode, currentPhase, room.hostUid, hostUid]);
 
   // Timer calculation
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
@@ -331,7 +356,6 @@ export const HostScreen: React.FC<HostScreenProps> = ({
     );
   }
 
-  const activeClueCard = CLUE_CARDS[currentPhase];
   const selectedEnvelopeData = selectedEnvelopeLetter ? ENVELOPES[selectedEnvelopeLetter] : null;
   const selectedEnvelopeState = selectedEnvelopeLetter ? envelopeStates.find((e) => e.letter === selectedEnvelopeLetter) : undefined;
 
@@ -1290,7 +1314,7 @@ export const HostScreen: React.FC<HostScreenProps> = ({
               </div>
 
               <p className="text-xs font-sans text-[#2C2A26] leading-relaxed">
-                {SOLUTION_CARD.full_resolution}
+                {solutionData?.full_resolution || 'Loading official police case resolution file...'}
               </p>
 
               {/* Scored Leaderboard */}
@@ -1373,6 +1397,8 @@ export const HostScreen: React.FC<HostScreenProps> = ({
         isOpen={isMapOpen}
         onClose={() => setIsMapOpen(false)}
         currentPhase={currentPhase}
+        capacity={room.capacity || players.length}
+        players={players}
       />
     </div>
   );

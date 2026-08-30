@@ -9,7 +9,7 @@
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit && ! grep -rn 'game.secret' src/components src/lib"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

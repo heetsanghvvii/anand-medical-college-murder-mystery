@@ -7,7 +7,7 @@ import {
   VoteData,
   DeductionData,
 } from '../types';
-import { ENVELOPES, PHASE_CONFIG, CHARACTERS, SOLUTION_CARD } from '../data/game';
+import { ENVELOPES, PHASE_CONFIG, CHARACTERS } from '../data/game';
 import { sound } from '../lib/audio';
 import { PlayerManualModal } from './PlayerManualModal';
 import { RelationshipMapModal } from './RelationshipMapModal';
@@ -38,6 +38,8 @@ import {
   BookOpen,
   Network,
   EyeOff,
+  Layers,
+  AlertCircle,
 } from 'lucide-react';
 
 interface SpectatorScreenProps {
@@ -361,6 +363,146 @@ export const SpectatorScreen: React.FC<SpectatorScreenProps> = ({
             );
           })}
         </div>
+
+        {/* Outstanding Forensic Slips by Tier Tracker */}
+        <div className="mt-8 bg-[#171615] border-2 border-white/10 rounded-3xl p-6 shadow-2xl space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2.5">
+              <Layers className="w-5 h-5 text-amber-400" />
+              <div>
+                <h3 className="font-serif font-bold text-base text-white">
+                  3-Tier Slip Status & Outstanding Evidence Slips
+                </h3>
+                <p className="text-[11px] font-mono text-white/50">
+                  Tracking un-published and un-sealed forensic slips across all 3 investigation rounds
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-mono">
+              <span className="px-2.5 py-1 rounded bg-white text-zinc-900 font-bold">Tier I: White (R2/3)</span>
+              <span className="px-2.5 py-1 rounded bg-amber-300 text-zinc-950 font-bold">Tier II: Pale Yellow (R4)</span>
+              <span className="px-2.5 py-1 rounded bg-red-600 text-white font-bold">Tier III: Red Wire</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* TIER I SLIPS */}
+            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="text-xs font-mono font-bold uppercase text-zinc-200">
+                  TIER I (R2/R3 WHITE SLIPS)
+                </span>
+                <span className="text-[10px] font-mono text-white/60">
+                  {letters.filter((l) => {
+                    const st = envelopeStates.find((e) => e.letter === l);
+                    return st?.published || st?.tier1_published;
+                  }).length} / 10 Published
+                </span>
+              </div>
+              <div className="grid grid-cols-5 gap-1.5 font-mono text-xs">
+                {letters.map((l) => {
+                  const st = envelopeStates.find((e) => e.letter === l);
+                  const isPub = st?.published || st?.tier1_published;
+                  const isUnsealed = st?.unlocked;
+                  const bg = isPub
+                    ? 'bg-emerald-950/80 text-emerald-300 border-emerald-600/60'
+                    : isUnsealed
+                    ? 'bg-amber-950/80 text-amber-300 border-amber-600/60'
+                    : 'bg-white/5 text-white/40 border-white/10';
+                  return (
+                    <div
+                      key={l}
+                      className={`p-2 rounded-xl border text-center font-bold flex flex-col items-center justify-center ${bg}`}
+                      title={`Exhibit ${l}: ${isPub ? 'Published' : isUnsealed ? 'In Custody' : 'Sealed'}`}
+                    >
+                      <span className="text-xs">{l}</span>
+                      <span className="text-[8px] opacity-80 uppercase tracking-tighter">
+                        {isPub ? 'LIVE' : isUnsealed ? 'HELD' : 'SEAL'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] font-mono text-white/40 italic">
+                *White slips unsealed by character pairs combining 4-digit codes.
+              </p>
+            </div>
+
+            {/* TIER II SLIPS */}
+            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="text-xs font-mono font-bold uppercase text-amber-300">
+                  TIER II (R4 YELLOW SLIPS)
+                </span>
+                <span className="text-[10px] font-mono text-white/60">
+                  {letters.filter((l) => {
+                    const st = envelopeStates.find((e) => e.letter === l);
+                    return st?.published || st?.tier2_published;
+                  }).length} / 10 Published
+                </span>
+              </div>
+              <div className="grid grid-cols-5 gap-1.5 font-mono text-xs">
+                {letters.map((l) => {
+                  const st = envelopeStates.find((e) => e.letter === l);
+                  const isPub = st?.published || st?.tier2_published;
+                  const isUnsealed = st?.unlocked;
+                  const bg = isPub
+                    ? 'bg-amber-400/20 text-amber-300 border-amber-500/60 font-bold'
+                    : isUnsealed
+                    ? 'bg-zinc-800 text-zinc-300 border-zinc-700'
+                    : 'bg-white/5 text-white/30 border-white/10';
+                  return (
+                    <div
+                      key={l}
+                      className={`p-2 rounded-xl border text-center font-bold flex flex-col items-center justify-center ${bg}`}
+                      title={`Exhibit ${l} Tier II: ${isPub ? 'Published' : 'Outstanding'}`}
+                    >
+                      <span className="text-xs">{l}</span>
+                      <span className="text-[8px] opacity-80 uppercase tracking-tighter">
+                        {isPub ? 'PUB' : isUnsealed ? 'PEND' : 'LOCK'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] font-mono text-amber-200/50 italic">
+                *Yellow slips read by assigned characters in Round 4 Cross-Examination.
+              </p>
+            </div>
+
+            {/* TIER III SLIPS */}
+            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="text-xs font-mono font-bold uppercase text-red-400">
+                  TIER III (RED FORENSIC WIRES)
+                </span>
+                <span className="text-[10px] font-mono text-white/60">
+                  Host Directives
+                </span>
+              </div>
+              <div className="space-y-2 font-mono text-xs">
+                <div className="p-2 rounded-xl bg-red-950/40 border border-red-800/40 flex items-center justify-between">
+                  <span className="text-red-200 font-bold">R1 Wake Wire</span>
+                  <span className="text-[9px] px-2 py-0.5 rounded bg-red-900 text-red-100">
+                    Autopsy Clue
+                  </span>
+                </div>
+                <div className="p-2 rounded-xl bg-red-950/40 border border-red-800/40 flex items-center justify-between">
+                  <span className="text-red-200 font-bold">Interval Audit Log</span>
+                  <span className="text-[9px] px-2 py-0.5 rounded bg-red-900 text-red-100">
+                    OT-3 Poison Clue
+                  </span>
+                </div>
+                <div className="p-2 rounded-xl bg-red-950/40 border border-red-800/40 flex items-center justify-between">
+                  <span className="text-red-200 font-bold">R4 Dean Register</span>
+                  <span className="text-[9px] px-2 py-0.5 rounded bg-red-900 text-red-100">
+                    Disciplinary File
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
 
       {/* Bottom Forensic Broadcasts & Hunt Tracker */}
@@ -424,6 +566,8 @@ export const SpectatorScreen: React.FC<SpectatorScreenProps> = ({
         isOpen={isMapOpen}
         onClose={() => setIsMapOpen(false)}
         currentPhase={currentPhase}
+        capacity={room.capacity || players.length}
+        players={players}
       />
     </div>
   );

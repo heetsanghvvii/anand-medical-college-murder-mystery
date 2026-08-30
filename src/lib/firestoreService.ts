@@ -30,7 +30,6 @@ import {
   ENVELOPES,
   PHASE_CONFIG,
   DROP_ORDER_CHARACTER_IDS,
-  CLUE_CARDS,
 } from '../data/game';
 import { computeOracleState } from './oracleService';
 
@@ -534,6 +533,20 @@ export async function publishEnvelope(
     published: true,
     published_by: publisherName,
     published_at: Date.now(),
+    tier1_state: 'PUBLISHED',
+    tier1_published: true,
+  });
+
+  const roomRef = doc(db, 'rooms', cleanCode);
+  const envelope = ENVELOPES[letter];
+  const summary = envelope?.slips?.[0]?.board_summary || envelope?.summary || 'Evidence Unsealed';
+  await updateDoc(roomRef, {
+    lastPublishedBanner: {
+      letter,
+      tier: 'I',
+      summary,
+      timestamp: Date.now(),
+    },
   });
 
   // Post alert to Nair messages
@@ -545,13 +558,215 @@ export async function publishEnvelope(
     senderName: 'Public Board Alert',
     characterName: 'Central Board',
     phase: 'R3_BOARD',
-    text: `DOCUMENT PUBLISHED TO LIVE BOARD: Envelope ${letter} (${ENVELOPES[letter]?.title || 'Evidence'}) was published by ${publisherName}!`,
+    text: `DOCUMENT PUBLISHED TO LIVE BOARD: Envelope ${letter} [Tier I: ${summary}] was posted by ${publisherName}!`,
     created_at: Date.now(),
     type: 'clue',
   });
 }
 
 export const publishEnvelopeToBoard = publishEnvelope;
+
+// Multi-Tier Publishing
+export async function publishTierSlip(
+  roomCode: string,
+  letter: string,
+  tier: 'I' | 'II' | 'III',
+  publisherName: string
+): Promise<void> {
+  const cleanCode = roomCode.trim().toUpperCase();
+  const envRef = doc(db, 'rooms', cleanCode, 'envelopeStates', letter);
+  const envelope = ENVELOPES[letter];
+  const slipIdx = tier === 'I' ? 0 : tier === 'II' ? 1 : 2;
+  const summary = envelope?.slips?.[slipIdx]?.board_summary || envelope?.summary || 'Evidence';
+
+  const updates: Record<string, any> = {
+    [`tier${tier === 'I' ? 1 : tier === 'II' ? 2 : 3}_state`]: 'PUBLISHED',
+    [`tier${tier === 'I' ? 1 : tier === 'II' ? 2 : 3}_published`]: true,
+    published: true,
+    published_by: publisherName,
+    published_at: Date.now(),
+  };
+
+  await updateDoc(envRef, updates);
+
+  const roomRef = doc(db, 'rooms', cleanCode);
+  await updateDoc(roomRef, {
+    lastPublishedBanner: {
+      letter,
+      tier,
+      summary,
+      timestamp: Date.now(),
+    },
+  });
+
+  const msgId = `env-publish-${letter}-t${tier}-${Date.now()}`;
+  const msgRef = doc(db, 'rooms', cleanCode, 'nairMessages', msgId);
+  await setDoc(msgRef, {
+    msgId,
+    senderUid: 'system',
+    senderName: 'Evidence Wire',
+    characterName: 'Central Evidence Board',
+    phase: tier === 'I' ? 'R3_BOARD' : tier === 'II' ? 'R4_INTERROGATION' : 'R5_HUNT',
+    text: `NEW SLIP PUBLISHED: Envelope ${letter} Tier ${tier} ("${summary}") posted to the central TV board by ${publisherName}!`,
+    created_at: Date.now(),
+    type: 'clue',
+  });
+}
+
+// Sealing Envelope Tier I or II
+export async function sealEnvelope(
+  roomCode: string,
+  letter: string,
+  tier: 'I' | 'II',
+  partnerNames: string[],
+  isRefusal: boolean = false
+): Promise<void> {
+  const cleanCode = roomCode.trim().toUpperCase();
+  const envRef = doc(db, 'rooms', cleanCode, 'envelopeStates', letter);
+  const stateVal = isRefusal ? 'SEALED_REFUSAL' : 'SEALED';
+
+  await updateDoc(envRef, {
+    [`tier${tier === 'I' ? 1 : 2}_state`]: stateVal,
+    [`tier${tier === 'I' ? 1 : 2}_sealed`]: true,
+    [`tier${tier === 'I' ? 1 : 2}_refusal`]: isRefusal,
+  });
+
+  const roomRef = doc(db, 'rooms', cleanCode);
+  await updateDoc(roomRef, {
+    lastSealedBanner: {
+      letter,
+      tier,
+      members: partnerNames,
+      isRefusal,
+      timestamp: Date.now(),
+    },
+  });
+
+  const msgId = `seal-${letter}-t${tier}-${Date.now()}`;
+  const msgRef = doc(db, 'rooms', cleanCode, 'nairMessages', msgId);
+  await setDoc(msgRef, {
+    msgId,
+    senderUid: 'system',
+    senderName: 'Evidence Archive',
+    characterName: 'Sealed Custody',
+    phase: tier === 'I' ? 'R3_BOARD' : 'R4_INTERROGATION',
+    text: isRefusal
+      ? `SEAL REFUSAL: Envelope ${letter} (Tier ${tier}) held in sealed custody due to partner deadlock.`
+      : `SEAL ENGAGED: Envelope ${letter} (Tier ${tier}) sealed in evidence custody by ${partnerNames.join(' & ')}.`,
+    created_at: Date.now(),
+    type: 'clue',
+  });
+}
+
+// Host Panic / Compel Force Open
+export async function forceOpenSealedEnvelope(
+  roomCode: string,
+  letter: string,
+  tier: 'I' | 'II'
+): Promise<void> {
+  const cleanCode = roomCode.trim().toUpperCase();
+  const envRef = doc(db, 'rooms', cleanCode, 'envelopeStates', letter);
+  const envelope = ENVELOPES[letter];
+  const slipIdx = tier === 'I' ? 0 : 1;
+  const summary = envelope?.slips?.[slipIdx]?.board_summary || envelope?.summary || 'Evidence';
+
+  await updateDoc(envRef, {
+    [`tier${tier === 'I' ? 1 : 2}_state`]: 'FORCED_OPEN',
+    [`tier${tier === 'I' ? 1 : 2}_published`]: true,
+    [`tier${tier === 'I' ? 1 : 2}_forced_open`]: true,
+    published: true,
+    unlocked: true,
+  });
+
+  const roomRef = doc(db, 'rooms', cleanCode);
+  await updateDoc(roomRef, {
+    lastPublishedBanner: {
+      letter,
+      tier,
+      summary: `[FORCED OPEN] ${summary}`,
+      timestamp: Date.now(),
+    },
+  });
+
+  const msgId = `force-open-${letter}-${Date.now()}`;
+  const msgRef = doc(db, 'rooms', cleanCode, 'nairMessages', msgId);
+  await setDoc(msgRef, {
+    msgId,
+    senderUid: 'system',
+    senderName: 'Host Warrant Override',
+    characterName: 'Director',
+    phase: 'R4_INTERROGATION',
+    text: `WARRENT EXECUTED: Sealed Envelope ${letter} (Tier ${tier}) has been FORCED OPEN onto the public board!`,
+    created_at: Date.now(),
+    type: 'transmission',
+  });
+}
+
+// 7. Advance Tier III in R5_HUNT (Host Step-by-Step)
+export async function advanceTier3Slip(
+  roomCode: string,
+  targetIndex?: number
+): Promise<void> {
+  const cleanCode = roomCode.trim().toUpperCase();
+  const roomRef = doc(db, 'rooms', cleanCode);
+  const roomSnap = await getDoc(roomRef);
+  if (!roomSnap.exists()) return;
+
+  const currentIdx = roomSnap.data().tier3RevealedIndex || 0;
+  const nextIdx = typeof targetIndex === 'number' ? targetIndex : Math.min(10, currentIdx + 1);
+
+  await updateDoc(roomRef, {
+    tier3RevealedIndex: nextIdx,
+  });
+
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  if (nextIdx > 0 && nextIdx <= letters.length) {
+    const letter = letters[nextIdx - 1];
+    const envRef = doc(db, 'rooms', cleanCode, 'envelopeStates', letter);
+    await updateDoc(envRef, {
+      tier3_state: 'PUBLISHED',
+      tier3_published: true,
+      published: true,
+    });
+
+    const envelope = ENVELOPES[letter];
+    const summary = envelope?.slips?.[2]?.board_summary || 'Tier III Unsealed';
+
+    await updateDoc(roomRef, {
+      lastPublishedBanner: {
+        letter,
+        tier: 'III',
+        summary,
+        timestamp: Date.now(),
+      },
+    });
+
+    const msgId = `tier3-${letter}-${Date.now()}`;
+    const msgRef = doc(db, 'rooms', cleanCode, 'nairMessages', msgId);
+    await setDoc(msgRef, {
+      msgId,
+      senderUid: 'system',
+      senderName: 'Host Reading',
+      characterName: 'Dean Chamber Podium',
+      phase: 'R5_HUNT',
+      text: `RED SLIP UNSEALED [Envelope ${letter} - Tier III]: "${summary}"`,
+      created_at: Date.now(),
+      type: 'clue',
+    });
+  }
+}
+
+// 8. Advance Reveal Sequence in REVEAL phase (Host Step-by-Step Presenter)
+export async function advanceRevealStep(
+  roomCode: string,
+  stepIndex: number
+): Promise<void> {
+  const cleanCode = roomCode.trim().toUpperCase();
+  const roomRef = doc(db, 'rooms', cleanCode);
+  await updateDoc(roomRef, {
+    revealStepIndex: stepIndex,
+  });
+}
 
 // 7. Force Unlock / Publish (Host Overrides)
 export async function hostForceUnlockEnvelope(

@@ -13,8 +13,6 @@ import {
   CHARACTERS,
   ENVELOPES,
   PHASE_CONFIG,
-  CLUE_CARDS,
-  SOLUTION_CARD,
 } from '../data/game';
 import { computeOracleState, DEFAULT_SCENARIO_SCRIPT } from '../lib/oracleService';
 import {
