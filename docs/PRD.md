@@ -53,9 +53,9 @@ Hosted murder-mystery nights are a great group experience, but the usual kits ha
 
 | Risk | Mitigation |
 |---|---|
-| A player drops out mid-game | Core clues are duplicated across tiers |
+| A player drops out mid-game | Optional roles only add corroborating clues, so losing one doesn't block the solution; core-role drop-outs to be tested in playtests |
 | Too hard, groups give up | Tier III clue cards narrow it down in the last round |
-| Phones die or lose signal | Game state lives on the server; rejoin restores the player |
+| Phones die or lose signal | Room state is stored in the cloud database, not the phone; rejoin flow to be tested in playtests |
 
 ## 8. Next
 
