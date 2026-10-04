@@ -1,8 +1,27 @@
-# The Anand Medical College Murder (Live Interactive Mystery)
+# The Anand Medical College Murder
 
-A real-time murder mystery game engineered for 10 to 20 live players, featuring synchronized forensic evidence boards, 3-tier slip progression, confidential dossiers, and server-authoritative security gating.
+**A live, multiplayer murder-mystery game for 10 to 20 players, played in one room with phones.** Product by [Heet Sanghvi](https://github.com/heetsanghvvii), Product Manager. **[Read the PRD](docs/PRD.md)**
 
----
+## The product thinking
+
+| | |
+|---|---|
+| **Problem** | Murder-mystery party kits are built for a fixed group size and are easy to spoil: one peek at the answer ruins the night for everyone. |
+| **User** | A host running a game night for 10 to 20 friends or colleagues, and the players who want a fair, immersive puzzle. |
+| **Solution** | A web game that hands each player a private character dossier, unlocks clues round by round, and keeps the answer locked on the server. |
+| **Key decisions** | The story stays solvable at any size from 10 to 20 (10 core suspects plus optional extras). Clues come in three tiers so the pace builds over five rounds. Partners must combine code halves, which forces players to talk. |
+| **Trade-off** | Keeping every secret server-side took more build effort than a static site, but it makes cheating impossible. |
+| **Success looks like** | The group solves it in one evening, nobody can peek, and the host runs it without a rehearsal. |
+
+## How a game runs
+
+1. The host opens a room and players join on their phones.
+2. Each player gets a character with public and private information.
+3. Over five rounds, paired riddles, cross-examination slips and final clue cards unlock.
+4. Players vote on the culprit; the solution is revealed by the server.
+
+<details>
+<summary><b>Story and game design (spoilers)</b></summary>
 
 ## 🏛️ Game Overview & Narrative
 
@@ -34,6 +53,8 @@ The game dynamically adapts from **10 to 20 players** without breaking core solv
    - Host forensic telegraph wires, OT-3 narcotics logs, and registrar disciplinary files.
 
 ---
+
+</details>
 
 ## 🔒 Security Architecture
 
